@@ -9,7 +9,7 @@ import (
 // Repository represents a generic repository.
 type Repository[T Entity] struct {
 	data        []T
-	transaction sync.Mutex
+	transaction *sync.Mutex
 }
 
 // NewRepository creates a new instance of Repository.
