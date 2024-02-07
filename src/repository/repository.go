@@ -47,5 +47,5 @@ func (r *Repository[T]) FindOneBy(criteria func(T) bool, silentMode bool) (*T, e
 	}
 	r.transaction.Unlock()
 
-	return nil, util.Ternary(silentMode, nil, errors.New("Entity not found"))
+	return nil, util.Ternary(silentMode, nil, errors.New("entity not found"))
 }
