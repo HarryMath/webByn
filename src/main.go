@@ -3,11 +3,11 @@ package main
 import (
 	"strconv"
 	"webByn/src/account"
-	"webByn/src/bank"
+	"webByn/src/byn"
 )
 
 func main() {
-	var bynSystem = bank.WebByn{}
+	var bynSystem = byn.WebByn{}
 	_, err1 := bynSystem.CreateNewAccount()
 	if err1 != nil {
 		panic(err1)

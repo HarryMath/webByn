@@ -8,7 +8,7 @@ import (
 	"webByn/src/util"
 )
 
-type BynPaymentService struct {
+type PaymentService struct {
 	ibanGenerator      util.IBANGenerator
 	emissionAccount    account.Account // Счет для эмиссии денег
 	destructionAccount account.Account // Счет для уничтожения денег
@@ -16,9 +16,10 @@ type BynPaymentService struct {
 }
 
 var once sync.Once
-var bynSystemInstance *BynPaymentService = nil
+var bynSystemInstance *PaymentService = nil
 
-func GetBynSystem() *BynPaymentService {
+// GetBynSystem returns instance of PaymentService which must be singleton
+func GetBynSystem() *PaymentService {
 	once.Do(func() {
 		var ibanGenerator = util.NewIBANGenerator("BY", 28-2)
 		var accountsRepository = repository.NewRepository[*account.Account]()
@@ -32,7 +33,7 @@ func GetBynSystem() *BynPaymentService {
 		if err != nil {
 			return
 		}
-		bynSystemInstance = &BynPaymentService{
+		bynSystemInstance = &PaymentService{
 			*ibanGenerator,
 			emissionAccount,
 			destructionAccount,
@@ -43,7 +44,7 @@ func GetBynSystem() *BynPaymentService {
 }
 
 // OpenAccount creates new account and returns new account instance
-func (paymentService *BynPaymentService) OpenAccount() (*account.Account, error) {
+func (paymentService *PaymentService) OpenAccount() (*account.Account, error) {
 	var iban = paymentService.ibanGenerator.Generate()
 	var accountInstance = account.NewAccount(iban)
 	err := paymentService.accounts.Add(&accountInstance)
@@ -53,13 +54,13 @@ func (paymentService *BynPaymentService) OpenAccount() (*account.Account, error)
 	return &accountInstance, nil
 }
 
-// IssueMoney issues the specified amount to the "issue" account.
-func (paymentService *BynPaymentService) IssueMoney(amount int) {
+// IssueMoney issues the specified amount to the "emission" account.
+func (paymentService *PaymentService) IssueMoney(amount int) {
 	paymentService.emissionAccount.Deposit(amount)
 }
 
 // Transfer sends a specified amount of money from a specified account to the "destruction" account.
-func (paymentService *BynPaymentService) Transfer(fromIBAN string, amount int) error {
+func (paymentService *PaymentService) Transfer(fromIBAN string, amount int) error {
 	fromAccount, err := paymentService.accounts.GetById(fromIBAN, false)
 	if err != nil {
 		return fmt.Errorf("account with IBAN %s not found", fromIBAN)
