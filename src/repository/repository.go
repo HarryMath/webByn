@@ -27,7 +27,7 @@ func (r *Repository[T]) Add(item T) error {
 		r.data = append(r.data, item)
 		return nil
 	}
-	return errors.New("Conflict creating entity")
+	return errors.New("conflict creating entity")
 }
 
 func (r *Repository[T]) GetById(uid interface{}, silentMode bool) (*T, error) {
@@ -39,7 +39,6 @@ func (r *Repository[T]) GetById(uid interface{}, silentMode bool) (*T, error) {
 func (r *Repository[T]) FindOneBy(criteria func(T) bool, silentMode bool) (*T, error) {
 	r.transaction.Lock()
 	for _, item := range r.data {
-		// Assume items have an "ID" field
 		if criteria(item) {
 			r.transaction.Unlock()
 			return &item, nil
