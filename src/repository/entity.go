@@ -1,5 +1,6 @@
 package repository
 
-type Entity interface {
+type Entity[Json any] interface {
 	GetUid() string
+	ToJson() Json
 }

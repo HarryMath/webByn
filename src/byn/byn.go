@@ -17,9 +17,9 @@ type TransferRequest struct {
 
 type PaymentService struct {
 	ibanGenerator      util.IBANGenerator
-	emissionAccount    *account.Account // Счет для эмиссии денег
-	destructionAccount *account.Account // Счет для уничтожения денег
-	accounts           *repository.Repository[*account.Account]
+	emissionAccount    *account.Account                                               // Account for emission money that can't be blocked
+	destructionAccount *account.Account                                               // Account for destruction money that can't be blocked
+	accounts           *repository.Repository[*account.Account, *account.JsonAccount] // wrapper for accounts array
 }
 
 var once sync.Once
@@ -30,8 +30,8 @@ func GetBynSystem() *PaymentService {
 	once.Do(func() {
 		var ibanGenerator = util.NewIBANGenerator("BY", 28-2)
 		var accountsRepository = repository.NewRepository[*account.Account]()
-		var emissionAccount = account.NewAccount(ibanGenerator.Generate())
-		var destructionAccount = account.NewAccount(ibanGenerator.Generate())
+		var emissionAccount = account.NewAccount(ibanGenerator.Generate(), false)
+		var destructionAccount = account.NewAccount(ibanGenerator.Generate(), false)
 		err := accountsRepository.Add(&emissionAccount)
 		if err != nil {
 			return
@@ -50,10 +50,20 @@ func GetBynSystem() *PaymentService {
 	return bynSystemInstance
 }
 
+// GetEmissionAccountNumber returns IBAN if "emission" account
+func (paymentService *PaymentService) GetEmissionAccountNumber() string {
+	return paymentService.emissionAccount.IBAN
+}
+
+// GetDestructionAccountNumber returns IBAN if "destruction" account
+func (paymentService *PaymentService) GetDestructionAccountNumber() string {
+	return paymentService.destructionAccount.IBAN
+}
+
 // OpenAccount creates new account and returns new account instance
 func (paymentService *PaymentService) OpenAccount() (*account.Account, error) {
 	var iban = paymentService.ibanGenerator.Generate()
-	var accountInstance = account.NewAccount(iban)
+	var accountInstance = account.NewAccount(iban, true)
 	err := paymentService.accounts.Add(&accountInstance)
 	if err != nil {
 		return nil, err
@@ -97,6 +107,15 @@ func (paymentService *PaymentService) Transfer(fromIBAN string, toIBAN string, a
 		return err
 	}
 	return nil
+}
+
+func (paymentService *PaymentService) DumpAccountsAsJSON() string {
+	accounts := paymentService.accounts.GelAll()
+	jsonData, err := json.MarshalIndent(accounts, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	return string(jsonData)
 }
 
 func (paymentService *PaymentService) TransferByJson(request TransferRequest) error {

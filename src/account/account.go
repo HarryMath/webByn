@@ -23,18 +23,29 @@ func (s Status) String() string {
 }
 
 type Account struct {
-	IBAN    string // Unique account number in IBAN format
-	balance int    // Account Balance
-	status  Status // Account status ("active" or "blocked")
-	mutex   sync.Mutex
+	IBAN     string // Unique account number in IBAN format
+	balance  int    // Account Balance
+	status   Status // Account status ("active" or "blocked")
+	canBlock bool   // If account can be blocked
+	mutex    sync.Mutex
 }
 
-func NewAccount(IBAN string) Account {
-	return Account{IBAN: IBAN, balance: 0, status: Active}
+type JsonAccount struct {
+	IBAN    string `json:"IBAN"`
+	Balance int    `json:"balance"`
+	Status  string `json:"status"`
+}
+
+func NewAccount(IBAN string, canBlock bool) Account {
+	return Account{IBAN: IBAN, balance: 0, status: Active, canBlock: canBlock}
 }
 
 func (account *Account) GetUid() string {
 	return account.IBAN
+}
+
+func (account *Account) ToJson() *JsonAccount {
+	return &JsonAccount{account.IBAN, account.balance, account.status.String()}
 }
 
 func (account *Account) GetBalance() int {
@@ -87,10 +98,14 @@ func (account *Account) TransferTo(toAccount *Account, amount int) error {
 	return nil
 }
 
-func (account *Account) Block() {
+func (account *Account) Block() error {
 	account.mutex.Lock()
 	defer account.mutex.Unlock()
+	if !account.canBlock {
+		return fmt.Errorf("account %s can't be blocked", account.IBAN)
+	}
 	account.status = Blocked
+	return nil
 }
 
 func (account *Account) Unblock() {
