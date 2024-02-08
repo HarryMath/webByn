@@ -23,11 +23,12 @@ func (s Status) String() string {
 }
 
 type Account struct {
-	IBAN     string // Unique account number in IBAN format
-	balance  int    // Account Balance
-	status   Status // Account status ("active" or "blocked")
-	canBlock bool   // If account can be blocked
-	mutex    sync.Mutex
+	IBAN        string // Unique account number in IBAN format
+	balance     int    // Account Balance
+	status      Status // Account status ("active" or "blocked")
+	canBlock    bool   // If account can be blocked
+	canWithdraw bool   // If possible to withdraw money from account
+	mutex       sync.Mutex
 }
 
 type JsonAccount struct {
@@ -36,8 +37,14 @@ type JsonAccount struct {
 	Status  string `json:"status"`
 }
 
-func NewAccount(IBAN string, canBlock bool) Account {
-	return Account{IBAN: IBAN, balance: 0, status: Active, canBlock: canBlock}
+func NewAccount(IBAN string, canBlock bool, canWithdraw bool) Account {
+	return Account{
+		IBAN:        IBAN,
+		balance:     0,
+		status:      Active,
+		canBlock:    canBlock,
+		canWithdraw: canWithdraw,
+	}
 }
 
 func (account *Account) GetUid() string {
@@ -55,7 +62,10 @@ func (account *Account) GetBalance() int {
 // Withdraw subtracts funds from the account.
 func (account *Account) withdraw(amount int) error {
 	if account.status == Blocked {
-		return fmt.Errorf("failed to withdraw account %s is blocked", account.IBAN)
+		return fmt.Errorf("account %s is blocked", account.IBAN)
+	}
+	if !account.canWithdraw {
+		return fmt.Errorf("not allowed to withdraw from %s account", account.IBAN)
 	}
 	if amount > account.balance {
 		return fmt.Errorf("insufficient balance in account %s", account.IBAN)

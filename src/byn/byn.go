@@ -30,8 +30,8 @@ func GetBynSystem() *PaymentService {
 	once.Do(func() {
 		var ibanGenerator = util.NewIBANGenerator("BY", 28-2)
 		var accountsRepository = repository.NewRepository[*account.Account]()
-		var emissionAccount = account.NewAccount(ibanGenerator.Generate(), false)
-		var destructionAccount = account.NewAccount(ibanGenerator.Generate(), false)
+		var emissionAccount = account.NewAccount(ibanGenerator.Generate(), false, true)
+		var destructionAccount = account.NewAccount(ibanGenerator.Generate(), false, false)
 		err := accountsRepository.Add(&emissionAccount)
 		if err != nil {
 			return
@@ -60,15 +60,15 @@ func (paymentService *PaymentService) GetDestructionAccountNumber() string {
 	return paymentService.destructionAccount.IBAN
 }
 
-// OpenAccount creates new account and returns new account instance
-func (paymentService *PaymentService) OpenAccount() (*account.Account, error) {
+// OpenAccount creates new account and returns IBAN of new instance
+func (paymentService *PaymentService) OpenAccount() string {
 	var iban = paymentService.ibanGenerator.Generate()
-	var accountInstance = account.NewAccount(iban, true)
+	var accountInstance = account.NewAccount(iban, true, true)
 	err := paymentService.accounts.Add(&accountInstance)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return &accountInstance, nil
+	return accountInstance.IBAN
 }
 
 // IssueMoney issues the specified amount to the "emission" account.
@@ -129,4 +129,43 @@ func (paymentService *PaymentService) TransferByJsonString(requestString string)
 		return err
 	}
 	return paymentService.TransferByJson(request)
+}
+
+func (paymentService *PaymentService) GetBalance(IBAN string) (int, error) {
+	accountInstance, err := paymentService.accounts.GetById(IBAN, false)
+	if err != nil {
+		return 0, err
+	}
+	return (*accountInstance).GetBalance(), nil
+}
+
+// GetAccountInfo returns account as json
+func (paymentService *PaymentService) GetAccountInfo(IBAN string) (string, error) {
+	accountInstance, err := paymentService.accounts.GetById(IBAN, false)
+	if err != nil {
+		return "", err
+	}
+	jsonAccount := (*accountInstance).ToJson()
+	jsonData, err := json.MarshalIndent(jsonAccount, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return string(jsonData), nil
+}
+
+func (paymentService *PaymentService) BlockAccount(IBAN string) error {
+	accountInstance, err := paymentService.accounts.GetById(IBAN, false)
+	if err != nil {
+		return err
+	}
+	return (*accountInstance).Block()
+}
+
+func (paymentService *PaymentService) UnblockAccount(IBAN string) error {
+	accountInstance, err := paymentService.accounts.GetById(IBAN, false)
+	if err != nil {
+		return err
+	}
+	(*accountInstance).Unblock()
+	return nil
 }
