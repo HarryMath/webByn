@@ -25,6 +25,6 @@ This is a simple payment system application implemented in Go. It provides funct
 
 ## Demo
 
-You can run this code on [replit.com](https://replit.com/@nikitabort22092/WebByn#main.go). Just open the link, click green button "Run" is the top of the screen. Wait about 40sec and you will see output of some examples
+You can run this code on [replit.com](https://replit.com/@nikitabort22092/WebByn#main.go). Just open the link, click green button "Fork & Run" is the top right corner of the screen. Wait about 40sec and you will see output of some examples
 
 If you have any suggestions, bug reports, or feature requests, please contact me by [email](mailto:nikitabort22092000@gmail.com) or phone (if you know it)
