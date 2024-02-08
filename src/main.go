@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	var bynSystem = byn.WebByn{}
+	var bynSystem = byn.GetBynSystem()
 	_, err1 := bynSystem.CreateNewAccount()
 	if err1 != nil {
 		panic(err1)

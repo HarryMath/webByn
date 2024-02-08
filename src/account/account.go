@@ -26,7 +26,7 @@ type Account struct {
 	IBAN    string // Unique account number in IBAN format
 	balance int    // Account Balance
 	status  Status // Account status ("active" or "blocked")
-	mutex   *sync.Mutex
+	mutex   sync.Mutex
 }
 
 func NewAccount(IBAN string) Account {
@@ -67,7 +67,7 @@ func (account *Account) Deposit(amount int, lock bool) error {
 	return nil
 }
 
-func (account *Account) TransferTo(toAccount Account, amount int) error {
+func (account *Account) TransferTo(toAccount *Account, amount int) error {
 	account.mutex.Lock()
 	defer account.mutex.Unlock()
 

@@ -17,9 +17,9 @@ type TransferRequest struct {
 
 type PaymentService struct {
 	ibanGenerator      util.IBANGenerator
-	emissionAccount    account.Account // Счет для эмиссии денег
-	destructionAccount account.Account // Счет для уничтожения денег
-	accounts           repository.Repository[*account.Account]
+	emissionAccount    *account.Account // Счет для эмиссии денег
+	destructionAccount *account.Account // Счет для уничтожения денег
+	accounts           *repository.Repository[*account.Account]
 }
 
 var once sync.Once
@@ -42,9 +42,9 @@ func GetBynSystem() *PaymentService {
 		}
 		bynSystemInstance = &PaymentService{
 			*ibanGenerator,
-			emissionAccount,
-			destructionAccount,
-			*accountsRepository,
+			&emissionAccount,
+			&destructionAccount,
+			accountsRepository,
 		}
 	})
 	return bynSystemInstance
@@ -92,7 +92,7 @@ func (paymentService *PaymentService) Transfer(fromIBAN string, toIBAN string, a
 	if err != nil {
 		return fmt.Errorf("account with IBAN %s not found", toIBAN)
 	}
-	err = (*fromAccount).TransferTo(**toAccount, amount)
+	err = (*fromAccount).TransferTo(*toAccount, amount)
 	if err != nil {
 		return err
 	}
